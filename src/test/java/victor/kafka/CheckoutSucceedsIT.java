@@ -23,7 +23,9 @@ class CheckoutSucceedsIT {
                 .contentType(TEXT_PLAIN).body("Living room, 2150").retrieve().toBodilessEntity();
         Thread.sleep(500); // address and command travel on different topics ⇒ let Teleport learn the address first
 
-        Map<String, Object> checkoutRequest = Map.of("userId", userId, "bookIds", List.of(1));
+        var checkoutRequest = Map.of(
+                "userId", userId,
+                "bookIds", List.of(1));
         rest.post().uri("http://localhost:8081/checkout") // throws on 4xx/5xx
                 .contentType(APPLICATION_JSON).body(checkoutRequest).retrieve().toBodilessEntity();
 
