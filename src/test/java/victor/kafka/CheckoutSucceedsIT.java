@@ -1,5 +1,6 @@
 package victor.kafka;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
 
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 
@@ -16,6 +18,12 @@ import static org.springframework.http.MediaType.TEXT_PLAIN;
 class CheckoutSucceedsIT {
     int userId = new Random().nextInt(1000, 1_000_000); // fresh user: no books left over from previous runs
     RestClient rest = RestClient.create();
+    TeleportFailedTopic teleportFailed = new TeleportFailedTopic();
+
+    @AfterEach
+    void closeConsumer() {
+        teleportFailed.close();
+    }
 
     @Test
     void bookIsTeleportedToTheUserAddress() throws InterruptedException {
@@ -29,6 +37,7 @@ class CheckoutSucceedsIT {
         rest.post().uri("http://localhost:8081/checkout") // throws on 4xx/5xx
                 .contentType(APPLICATION_JSON).body(checkoutRequest).retrieve().toBodilessEntity();
 
-        assertThat(TeleportFailedTopic.waitForEventOf(userId, Duration.ofSeconds(5))).isEmpty();
+        await().during(Duration.ofSeconds(5)).atMost(Duration.ofSeconds(6)).untilAsserted(() -> // stays empty for 5s
+                assertThat(teleportFailed.eventsOf(userId)).isEmpty());
     }
 }
