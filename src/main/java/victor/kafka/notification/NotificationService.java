@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import victor.kafka.Events.TeleportFailed;
 
 @SpringBootApplication
@@ -15,9 +16,11 @@ public class NotificationService {
         SpringApplication.run(NotificationService.class, args);
     }
 
+    @RetryableTopic(attempts = "3") // after the 3rd failed attempt, the message is parked in topic TeleportFailed-dlt
     @KafkaListener(topics = "TeleportFailed", groupId = "notification")
     void onTeleportFailed(TeleportFailed event) {
-//        if (event.bookId() == 6) throw new IllegalStateException("SMTP down"); // TODO 2
+        log.info("Attempt to notify");
+        if (event.bookId() == 13) throw new IllegalStateException("SMTP down"); // TODO 2
         log.info("📧 Email/SMS to user {}: sorry, book {} could not be teleported", event.userId(), event.bookId());
     }
 }
