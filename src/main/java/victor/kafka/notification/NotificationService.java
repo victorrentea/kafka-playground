@@ -17,7 +17,7 @@ public class NotificationService {
 
     @KafkaListener(topics = "TeleportFailed", groupId = "notification")
     void onTeleportFailed(TeleportFailed event) {
-        if (event.bookId() == 6) throw new IllegalStateException("SMTP down");
+//        if (event.bookId() == 6) throw new IllegalStateException("SMTP down"); // TODO 2
         log.info("📧 Email/SMS to user {}: sorry, book {} could not be teleported", event.userId(), event.bookId());
     }
 }
