@@ -22,5 +22,7 @@ public class NotificationService {
         log.info("Attempt to notify");
         if (event.bookId() == 13) throw new IllegalStateException("SMTP down"); // TODO 2
         log.info("📧 Email/SMS to user {}: sorry, book {} could not be teleported", event.userId(), event.bookId());
+        // If it makes no sense to continue processing other messages for the next 3 seconds of, let's say, backoff,
+        // you could suspend the consumer group thread from Kafka in Spring Kafka.
     }
 }
