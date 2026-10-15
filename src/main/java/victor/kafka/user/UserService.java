@@ -18,28 +18,30 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 @SpringBootApplication
 @RestController
 public class UserService {
-  public static void main(String[] args) {
-    SpringApplication.run(UserService.class, "--server.port=8082");
-  }
+    public static void main(String[] args) {
+        SpringApplication.run(UserService.class, "--server.port=8082");
+    }
 
-  @Autowired KafkaTemplate<Integer, Object> kafka;
-  Map<Integer, Set<Integer>> booksOfUser = new HashMap<>(); // fake DB
+    @Autowired KafkaTemplate<String, Object> kafka;
+    Map<Integer, Set<Integer>> booksOfUser = new HashMap<>(); // fake DB
 
-  @PostMapping("/user/{userId}/books")
-  synchronized void addBooks(@PathVariable int userId, @RequestBody List<Integer> bookIds) {
-    Set<Integer> books = booksOfUser.computeIfAbsent(userId, k -> new HashSet<>());
-    if (books.size() + bookIds.size() > 5) throw new ResponseStatusException(CONFLICT, "Max 5 books/user");
-    books.addAll(bookIds);
-    bookIds.forEach(bookId -> kafka.send("BookAssignedToUser", userId, new BookAssignedToUser(bookId, userId)));
-  }
+    @PostMapping("/user/{userId}/books")
+    synchronized void addBooks(@PathVariable int userId, @RequestBody List<Integer> bookIds) {
+        Set<Integer> existingBooks = booksOfUser.computeIfAbsent(userId, k -> new HashSet<>());
+        if (existingBooks.size() + bookIds.size() > 5) throw new ResponseStatusException(CONFLICT, "Max 5 books/user");
+        existingBooks.addAll(bookIds);
+        for (int bookId : bookIds) {
+            kafka.send("BookAssignedToUser", String.valueOf(userId), new BookAssignedToUser(bookId, userId));
+        }
+    }
 
-  @PutMapping("/user/{userId}/address")
-  void updateAddress(@PathVariable int userId, @RequestBody String address) {
-    kafka.send("UserAddressUpdated", userId, new UserAddressUpdated(userId, address));
-  }
+    @PutMapping("/user/{userId}/address")
+    void updateAddress(@PathVariable int userId, @RequestBody String address) {
+        kafka.send("UserAddressUpdated", String.valueOf(userId), new UserAddressUpdated(userId, address));
+    }
 
-  @KafkaListener(topics = "TeleportFailed", groupId = "user")
-  synchronized void compensate(TeleportFailed event) {
-    booksOfUser.getOrDefault(event.userId(), new HashSet<>()).remove(event.bookId());
-  }
+    @KafkaListener(topics = "TeleportFailed", groupId = "user")
+    synchronized void compensate(TeleportFailed event) {
+        booksOfUser.getOrDefault(event.userId(), new HashSet<>()).remove(event.bookId());
+    }
 }

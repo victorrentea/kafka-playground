@@ -12,7 +12,20 @@
   <version>1.0</version>
   <properties>
     <java.version>21</java.version>
+    <!-- patch bumps over Spring Boot 4.1.1's picks, to clear known CVEs -->
+    <jackson-bom.version>3.1.7</jackson-bom.version>
+    <jackson-2-bom.version>2.21.7</jackson-2-bom.version>
+    <tomcat.version>11.0.27</tomcat.version>
   </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency> <!-- pulled by Kafka; patched for CVEs -->
+        <groupId>at.yawk.lz4</groupId>
+        <artifactId>lz4-java</artifactId>
+        <version>1.11.4</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -25,6 +38,16 @@
     <dependency> <!-- the Kafka broker itself, started by KafkaBroker.java: no Docker, no download -->
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka_2.13</artifactId>
+    </dependency>
+    <dependency> <!-- restarts every running service when its classes are rebuilt (⌘F9 in IntelliJ) -->
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-devtools</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
