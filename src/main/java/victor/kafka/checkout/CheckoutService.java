@@ -32,6 +32,6 @@ public class CheckoutService {
         rest.post().uri("/user/{u}/books", request.userId()).body(request.bookIds()).retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> { throw new ResponseStatusException(res.getStatusCode()); })
                 .toBodilessEntity();
-        kafka.send("TeleportBooksToUser", String.valueOf(request.userId()), new TeleportBooksToUser(request.bookIds(), request.userId()));
+        kafka.send("TeleportBooksToUser", new TeleportBooksToUser(request.bookIds(), request.userId()));
     }
 }
